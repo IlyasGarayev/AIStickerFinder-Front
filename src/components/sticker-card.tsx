@@ -19,7 +19,34 @@ export function StickerCard({ sticker }: StickerCardProps) {
     try {
       const response = await fetch(fullImageUrl);
       const blob = await response.blob();
-      await navigator.clipboard.write([new ClipboardItem({ "image/webp": blob })]);
+      
+      // Convert WebP blob to PNG using Canvas (browsers don't support copying WebP directly)
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(blob);
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = objectUrl;
+      });
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context failed');
+      
+      ctx.drawImage(img, 0, 0);
+      
+      const pngBlob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, 'image/png');
+      });
+      
+      URL.revokeObjectURL(objectUrl);
+      if (!pngBlob) throw new Error('PNG conversion failed');
+
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
       toast.success("Vibe copied! 🚀");
     } catch (error) {
       console.error("Copy failed", error);
