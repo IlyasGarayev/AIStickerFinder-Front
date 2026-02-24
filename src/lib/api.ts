@@ -10,13 +10,18 @@ import axios from 'axios';
 // OR they are running it locally and we are just building the frontend.
 // Given the constraints, I will use the environment variable if present, else default.
 
-export const BASE_URL = import.meta.env.VITE_API_URL || 'https://aistickerfinder-git-91281591862.europe-west1.run.app/';
+export const BASE_URL = (import.meta.env.VITE_API_URL || 'https://aistickerfinder-git-91281591862.europe-west1.run.app').replace(/\/$/, '');
 
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+api.interceptors.request.use((config) => {
+  console.log('Outgoing Request:', config.method?.toUpperCase(), config.baseURL + config.url);
+  return config;
 });
 
 export interface Sticker {
